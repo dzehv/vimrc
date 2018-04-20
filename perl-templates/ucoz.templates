@@ -1,0 +1,32 @@
+== uCoz.select == map:ums, sc:s, insert ==
+my $query = "SELECT <CURSOR> FROM `_$setup{'mf'}`.`shop_<+table_name+>`";
+my $sth = $dbh->prepare($query);
+$sth->execute() or fatalError("[${\__FILE__} (${\__LINE__})] $DBI::err \"$DBI::errstr\" Query : $query");
+<+action_code+>
+$sth->finish();
+
+== uCoz.update == map:umu, sc:s, insert ==
+my $query = "UPDATE `_$setup{'mf'}`.`<CURSOR>` SET (`<+column+>` = <+value+>) ";
+$dbh->do($query) or fatalError("[${\__FILE__} (${\__LINE__})] $DBI::err \"$DBI::errstr\" Query : $query");
+
+== uCoz.insert == map:umi, sc:s, insert ==
+my $query = "INSERT INTO `_$setup{'mf'}`.`<CURSOR>` (<+fields_list+>) VALUES (<+values+>) ";
+$dbh->do($query) or fatalError("[${\__FILE__} (${\__LINE__})] $DBI::err \"$DBI::errstr\" Query : $query");
+
+== uCoz.delete == map:umd, sc:s, insert ==
+my $query = "DELETE FROM `_$setup{'mf'}`.`<CURSOR>` WHERE ";
+$dbh->do($query) or fatalError("[${\__FILE__} (${\__LINE__})] $DBI::err \"$DBI::errstr\" Query : $query");
+
+== uCoz.subcoment == map:ufu, sc:s, below, indent ==
+=pod
+
+	<CURSOR><+SHORT_DESCRIPTION+>
+
+	<+FULL_DESCRIPTION+>
+
+	@author	Егор Годованюк <negor@ucoz.org>
+	@param	<+TYPE+> <+DESCRIPTION+>
+	@return	<+TYPE+> <+DESCRIPTION+>
+
+=cut
+== ENDTEMPLATE ==

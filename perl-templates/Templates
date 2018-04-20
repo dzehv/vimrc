@@ -1,0 +1,9 @@
+MenuShortcut( 'Idioms',     'i' )
+IncludeFile( 'idioms.templates' )
+
+MenuShortcut( 'Statements', 's' )
+IncludeFile( 'statements.templates' )
+
+MenuShortcut( 'uCoz',     'u' )
+IncludeFile( 'ucoz.templates' )
+

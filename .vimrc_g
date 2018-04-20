@@ -1,0 +1,484 @@
+set fileencodings=ucs-bom,utf-8
+source $HOME/.vim/vim/vim_use_utf8_symbols
+let g:Perl_PluginDir = $HOME.'/.vim/bundle/vim-plugins/'
+"set term=xterm-256color
+set term=screen-256color
+filetype off
+let $VIMHOME=expand('<sfile>:p:h:h')
+if has('win32') || has('win64')
+	lang messages en
+	if( !has('gui') )
+		set term=xterm-256color
+		set t_Co=256
+		let &t_AB="\e[48;5;%dm"
+		let &t_AF="\e[38;5;%dm"
+	endif
+	let $VIMHOME = $HOME."/vimfiles"
+	"set directory=$VIMHOME."\temp"
+	"set backupdir=$VIMHOME."\temp"
+	"set backupskip=/tmp/*,/private/tmp/*
+	let $TEMP = $VIMHOME."\temp"
+	let $TMPDIR = $VIMHOME."\temp"
+	set rtp+=$VIMHOME/bundle/vundle/
+	call vundle#rc('$VIMHOME/bundle/')
+	let g:Perl_GlobalTemplateFile = $VIMHOME.'\bundle\vim-plugins\perl-support\templates\Templates'
+	let g:Perl_LocalTemplateFile = $HOME.'\.vim\vim\perl-templates\Templates'
+	"autocmd FuncUndefined * exe 'runtime autoload/' . expand('<afile>') . '.vim'
+else
+	set encoding=utf-8
+	"set backupdir=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
+	"set backupskip=/tmp/*,/private/tmp/*
+	"set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
+	set rtp+=~/.vim/bundle/vundle/
+	call vundle#rc()
+	let $VIMHOME = $HOME."/.vim"
+	let g:Perl_GlobalTemplateFile = $HOME.'/.vim/bundle/vim-plugins/perl-support/templates/Templates'
+	let g:Perl_LocalTemplateFile = $HOME.'/.vim/vim/perl-templates/Templates'
+endif
+
+"-------------------------------------------------------------------------------
+" Plugins list
+"-------------------------------------------------------------------------------
+"репозитории на github
+Bundle	'gmarik/vundle'
+Bundle  'scrooloose/nerdtree'
+Bundle	'mattn/emmet-vim'
+Bundle	'tpope/vim-surround'
+Bundle	'Bravo13/vim-perl-colorscheme'
+Bundle	'Bravo13/vim-plugins'
+Bundle	'altercation/vim-colors-solarized'
+Bundle	'jiangmiao/auto-pairs'
+Bundle	'airblade/vim-gitgutter'
+Bundle	'tpope/vim-fugitive'
+Bundle	'xolox/vim-session'
+Bundle	'xolox/vim-misc'
+Bundle	'shinokada/SWTC.vim'
+Bundle	'kien/ctrlp.vim'
+"Bundle	'vim-perl/vim-perl' Too slow on large files. May be later
+Bundle	'kshenoy/vim-signature'
+Bundle	'terryma/vim-multiple-cursors'
+Bundle	'aserebryakov/filestyle'
+"Bundle	'eiginn/netrw'
+"Bundle	'bling/vim-airline'
+"Bundle	'fholgado/minibufexpl.vim'
+Bundle 'yamafaktory/lumberjack.vim'
+Bundle 'benjaminwhite/Benokai'
+"Bundle 'robertmeta/nofrils'
+Bundle 'Yggdroot/indentLine'
+Bundle 'StanAngeloff/php.vim'
+Bundle 'tmhedberg/matchit'
+Bundle 'godlygeek/tabular'
+Bundle 'moll/vim-node'
+Bundle 'pangloss/vim-javascript'
+Bundle 'jelera/vim-javascript-syntax'
+Bundle 'Lokaltog/vim-distinguished'
+
+"репозитории vim/scripts
+"Bundle 'L9'
+"Bundle	'perl-support.vim'
+"Bundle	'taglist.vim'
+
+"git репозитории (не на github)
+"Bundle 'git://git.wincent.com/command-t.git'
+
+"локальные git репозитории(если работаете над собственным плагином)
+"Bundle 'file:///Users/gmarik/path/to/plugin'
+
+filetype plugin indent on
+
+function MyTabLine()
+	let tabline = ''
+
+	" Формируем tabline для каждой вкладки -->
+	for i in range(tabpagenr('$'))
+		" Подсвечиваем заголовок выбранной в данный момент вкладки.
+		if i + 1 == tabpagenr()
+			let tabline .= '%#TabLineSel#'
+		else
+			let tabline .= '%#TabLine#'
+		endif
+
+		" Устанавливаем номер вкладки
+		let tabline .= '%' . (i + 1) . 'T'
+
+		" Получаем имя вкладки
+		let tabline .= ' %{MyTabLabel(' . (i + 1) . ')} |'
+	endfor
+	" Формируем tabline для каждой вкладки <--
+
+	" Заполняем лишнее пространство
+	let tabline .= '%#TabLineFill#%T'
+
+	" Выровненная по правому краю кнопка закрытия вкладки
+	if tabpagenr('$') > 1
+		let tabline .= '%=%#TabLine#%999XX'
+	endif
+
+	return tabline
+endfunction
+
+function MyTabLabel(n)
+	let label = ''
+	let buflist = tabpagebuflist(a:n)
+
+	" Имя файла и номер вкладки -->
+	"let label = substitute(bufname(buflist[tabpagewinnr(a:n) - 1]), '.*/', '', '')
+	let label =  pathshorten(bufname(buflist[tabpagewinnr(a:n) - 1]))
+
+	if label == ''
+		let label = '[No Name]'
+	endif
+
+	let label .= ' (' . a:n . ')'
+	" Имя файла и номер вкладки <--
+
+	" Определяем, есть ли во вкладке хотя бы один
+	" модифицированный буфер.
+	" -->
+	for i in range(len(buflist))
+		if getbufvar(buflist[i], "&modified")
+			let label = '[+] ' . label
+			break
+		endif
+	endfor
+	" <--
+
+	return label
+endfunction
+
+function MyGuiTabLabel()
+	return '%{MyTabLabel(' . tabpagenr() . ')}'
+endfunction
+
+" Закрытие невидимых буферов
+function! Wipeout()
+	" list of *all* buffer numbers
+	let l:buffers = range(1, bufnr('$'))
+
+	" what tab page are we in?
+	let l:currentTab = tabpagenr()
+	try
+		" go through all tab pages
+		let l:tab = 0
+		while l:tab < tabpagenr('$')
+			let l:tab += 1
+
+			" go through all windows
+			let l:win = 0
+			while l:win < winnr('$')
+				let l:win += 1
+				" whatever buffer is in this window in this tab, remove it from
+				" l:buffers list
+				let l:thisbuf = winbufnr(l:win)
+				call remove(l:buffers, index(l:buffers, l:thisbuf))
+			endwhile
+		endwhile
+
+		" if there are any buffers left, delete them
+		if len(l:buffers)
+		execute 'bwipeout' join(l:buffers)
+		endif
+	finally
+		" go back to our original tab page
+		execute 'tabnext' l:currentTab
+	endtry
+endfunction
+
+function! Plugins()
+	if exists(':GitGutterEnable')
+		nmap <F4> :GitGutterToggle<CR>
+		"GitGutterLineHighlightsEnable
+	endif
+	if exists(':AirlineToggle')
+		let g:airline_powerline_fonts = 1	
+		let g:airline_left_sep=''
+		let g:airline_right_sep=''
+		let g:airline_theme='bubblegum'
+	endif
+	if exists(':CtrlP')
+		nmap <F6> :CtrlP<CR>
+	endif
+	if exists(':NERDTree')
+		"au VimEnter * NERDTreeToggle D:/web/sites
+		" hit <F3> to toggle NERDTree
+		exe "nmap <F3> :NERDTreeToggle %:p:h<CR>"
+
+		let g:nerdtree_tabs_open_on_gui_startup=1
+	endif
+
+	if exists(':TlistToggle')
+		" hit <F8> to show/hide taglist
+		" hit <F8> to show/hide taglist
+		nnoremap <silent> <F8> :TlistToggle<CR>
+	endif
+endfunction
+
+function! InitPerlWork()
+  	colorscheme uperl
+
+	"Make foldings
+	nmap zC ^f{v%zf
+
+endfunction
+
+if has('perl')
+	function! PerlCurrentSub()
+	perl << EOP
+		use strict;
+		sub current_sub {
+			my $curwin = $main::curwin;
+			my $curbuf = $main::curbuf;
+
+			my @document = map { $curbuf->Get($_)  } 0 .. $curbuf->Count;
+			my ( $line_number, $column   ) = $curwin->Cursor;
+
+			my $sub_name = '(not in sub)';
+			my $package = 'main';
+			for my $i ( reverse ( 1 .. $line_number  -1  )  ) {
+				my $line = $document[$i];
+				if ( $line =~ /^\s*sub\s+(\w+)\b/  ) {
+					$sub_name = $1;
+					last;
+				}
+			}
+			for my $i ( reverse ( 0 .. $line_number -1   )  ) {
+				my $line = $document[$i];
+				if ( $line =~ /^\s*package\s+(\w+)\b/  ) {
+					$package = $1;
+					last;
+				}
+			}
+			VIM::DoCommand "let subName='Sub: $package::$sub_name '";
+		}
+EOP
+	endfunction
+
+	function! StatusLineIndexLine()
+		call PerlCurrentSub()
+		perl current_sub()
+		if &filetype == 'perl'
+			return subName
+		else
+			return ''
+		endif
+	endfunction
+endif
+
+function! <SID>SynStack()
+  if !exists("*synstack")
+    return
+  endif
+  echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
+endfunc
+
+"" Toggle relative line number
+function! NumberToggle()
+	if(&relativenumber)
+		set norelativenumber
+			set number
+		else
+			"" Uncomment the following to display a '0' instead of the line number
+			" set nonumber
+			set relativenumber
+	endif
+endfunc
+
+function! SetStatusline()
+	set laststatus=2
+	set statusline=%f%m%r%h%w\ %y\ enc:%{&enc}\ ff:%{&ff}\ fenc:%{&fenc}%=(ch:%3b\ hex:%2B)\ col:%2c\ line:%2l/%L\ 
+	if has('perl')
+		set statusline+=%(\%{StatusLineIndexLine()}%)
+	endif
+	set statusline+=[%2p%%]%{fugitive#statusline()}
+endfunction
+
+fu! SeeTab()
+	if !exists("g:SeeTabEnabled")
+		let g:SeeTabEnabled = 1
+		let g:SeeTab_list = &list
+		let g:SeeTab_listchars = &listchars
+		let regA = @a
+		redir @a
+		hi SpecialKey
+		redir END
+		let g:SeeTabSpecialKey = @a
+		let @a = regA
+		set list
+		set listchars=tab:\|\ 
+	else
+		let &list = g:SeeTab_list
+		let &listchars = &listchars
+		silent! exe "hi ".substitute(g:SeeTabSpecialKey,'xxx','','e')
+		unlet g:SeeTabEnabled g:SeeTab_list g:SeeTab_listchars
+	endif
+endfunc
+com! -nargs=0 SeeTab :call SeeTab()
+
+if has("folding")
+	"set foldcolumn=3
+	"let perl_fold=1
+	"let perl_fold_blocks=1
+	"set foldmethod=syntax
+	"set foldlevelstart=1
+endif
+
+"-------------------------------------------------------------------------------
+" Use Vim settings, rather then Vi settings.
+" This must be first, because it changes other options as a side effect.
+"-------------------------------------------------------------------------------
+set nocompatible
+
+"-------------------------------------------------------------------------------
+" Enable file type detection. Use the default filetype settings.
+" Also load indent files, to automatically do language-dependent indenting.
+"-------------------------------------------------------------------------------
+filetype  plugin on
+filetype  indent on
+
+syntax on
+
+set number
+set t_Co=256
+try 
+	let g:solarized_termcolors=256
+	set background=dark
+  colorscheme Benokai
+	" colorscheme nofrils-light
+catch
+	colorscheme blue
+endtry
+
+"remove toolbar
+set guioptions-=T
+
+set guifont=Courier_New:h12
+
+" Maximize window
+" call libcallnr('maximize', 'Maximize', 1) 
+
+" switch higlight no matter the previous state
+nmap <F4> :set hls! <cr>
+" hit '/' highlights then enter search mode
+nnoremap / :set hlsearch<cr>/
+
+autocmd FileType perl call InitPerlWork()
+autocmd FileType perl call SeeTab()
+autocmd FileType php call SeeTab()
+
+"au FileType javascript call JavaScriptFold()
+
+call SetStatusline()
+
+
+"-------------------------------------------------------------------------------
+" Various settings
+"-------------------------------------------------------------------------------
+set autoindent                  " copy indent from current line
+set autoread                    " read open files again when changed outside Vim
+set autowrite                   " write a modified buffer on each :next , ...
+set backspace=indent,eol,start  " backspacing over everything in insert mode
+"set backup                      " keep a backup file
+set browsedir=current           " which directory to use for the file browser
+set complete+=k                 " scan the files given with the 'dictionary' option
+set history=50                  " keep 50 lines of command line history
+set hlsearch                    " highlightthe last used search pattern
+set incsearch                   " do incremental searching
+set listchars=tab:>.,eol:\$     " strings to use in 'list' mode
+set mouse=a                     " enable the use of the mouse
+set nowrap                      " do not wrap lines
+set ruler                       " show the cursor position all the time
+set shiftwidth=2                " number of spaces to use for each step of indent
+set showcmd                     " display incomplete commands
+set smartindent                 " smart autoindenting when starting a new line
+set tabstop=2                   " number of spaces that a <Tab> counts for
+set expandtab
+"set noexpandtab
+set visualbell                  " visual bell instead of beeping
+set wildignore=*.bak,*.o,*.e,*~ " wildmenu: ignore these extensions
+set wildmenu                    " command-line completion in an enhanced mode
+"set backup 											" setup for backup swap files location
+set writebackup
+"set showtabline=0
+set tabline=%!MyTabLine()
+set guitablabel=%!MyGuiTabLabel()
+set pastetoggle=<F7>
+"-------------------------------------------------------------------------------
+"  highlight paired brackets
+"-------------------------------------------------------------------------------
+highlight MatchParen ctermbg=blue guibg=lightyellow
+
+"-------------------------------------------------------------------------------
+"  MiniBufExpl
+"-------------------------------------------------------------------------------
+let g:miniBufExplUseSingleClick = 1
+
+"-------------------------------------------------------------------------------
+"  netrw
+"-------------------------------------------------------------------------------
+let g:netrw_liststyle = 3
+let g:netrw_browse_split = 4
+let g:netrw_altv = 1
+let g:netrw_winsize = 25
+let g:netrw_banner = 0
+
+autocmd VimEnter * :call Plugins()
+
+" Shortcuts
+let mapleader = ","
+" Disable <Arrow keys>
+" Warning: nightmare mode!
+inoremap <Up> <NOP>
+inoremap <Down> <NOP>
+inoremap <Left> <NOP>
+inoremap <Right> <NOP>
+noremap <Up> <NOP>
+noremap <Down> <NOP>
+noremap <Left> <NOP>
+noremap <Right> <NOP>
+
+" Navigate with <Alt>-hjkl in Insert mode
+inoremap <A-h> <C-o>h
+inoremap <A-j> <C-o>j
+inoremap <A-k> <C-o>k
+inoremap <A-l> <C-o>l
+
+" Switch splits
+nmap <C-h> <C-W>h
+nmap <C-j> <C-W>j
+nmap <C-k> <C-W>k
+nmap <C-l> <C-W>l
+
+" Show syntag group
+" nmap <F11> :call <SID>SynStack()<CR>
+
+" n and N
+" Search matches are always in center
+nmap n nzz
+nmap N Nzz
+nmap * *zz
+nmap # #zz
+nmap g* g*zz
+nmap g# g#zz
+
+" Navigate through wrapped lines
+noremap j gj
+noremap k gk
+
+nnoremap <F5> :call NumberToggle()<cr>
+
+" delete and change commands without changing anonymous register
+nmap <C-d> "_d
+nmap <C-c> "_c
+
+if has("unix")
+
+    " фикс для русских клавиш
+    set langmap=йq,цw,уe,кr,еt,нy,гu,шi,щo,зp,х[,ъ],фa,ыs,вd,аf,пg,рh,оj,лk,дl,ж\\;,э',яz,чx,сc,мv,иb,тn,ьm,б\\,,ю.,ё`,ЙQ,ЦW,УE,КR,ЕT,НY,ГU,ШI,ЩO,ЗP,Х{,Ъ},ФA,ЫS,ВD,АF,ПG,РH,ОJ,ЛK,ДL,Ж:,Э\\",ЯZ,ЧX,СC,МV,ИB,ТN,ЬM,Б<,Ю>,Ё~
+
+endif
+
+" apache autorestart on save
+" autocmd BufWrite *.pl,*.fcg,*.pm execute "silent !apachectlru_dev017 restart"
+" if some lags with render
+" autocmd BufWrite *.pl,*.fcg,*.pm tabn
+" autocmd BufWrite *.pl,*.fcg,*.pm tabp
