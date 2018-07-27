@@ -1,0 +1,114 @@
+set shell=/bin/sh " fish friendly
+"
+" Base configuration from https://github.com/tpope/vim-sensible
+"
+if has('autocmd')
+  filetype plugin indent on
+endif
+if has('syntax') && !exists('g:syntax_on')
+  syntax enable
+endif
+
+" Use :help 'option' to see the documentation for the given option.
+
+set autoindent
+set backspace=indent,eol,start
+set complete-=i
+set smarttab
+
+set nrformats-=octal
+
+set ttimeout
+set ttimeoutlen=100
+
+set incsearch
+" Use <C-L> to clear the highlighting of :set hlsearch.
+nnoremap <silent> <C-L> :nohlsearch<CR><C-L>
+
+set laststatus=2
+set ruler
+set showcmd
+set wildmenu
+
+if !&scrolloff
+  set scrolloff=1
+endif
+if !&sidescrolloff
+  set sidescrolloff=5
+endif
+set display+=lastline
+
+if &encoding ==# 'latin1' && has('gui_running')
+  set encoding=utf-8
+endif
+
+if &listchars ==# 'eol:$'
+  set listchars=tab:>\ ,trail:-,extends:>,precedes:<,nbsp:+
+endif
+
+if has('path_extra')
+  setglobal tags-=./tags tags^=./tags;
+endif
+
+if &shell =~# 'fish$'
+  set shell=/bin/bash
+endif
+
+set autoread
+set fileformats+=mac
+
+if &history < 1000
+  set history=1000
+endif
+if &tabpagemax < 50
+  set tabpagemax=50
+endif
+if !empty(&viminfo)
+  set viminfo^=!
+endif
+set sessionoptions-=options
+
+" Allow color schemes to do bright colors without forcing bold.
+if &t_Co == 8 && $TERM !~# '^linux'
+  set t_Co=16
+endif
+
+" Load matchit.vim, but only if the user hasn't installed a newer version.
+if !exists('g:loaded_matchit') && findfile('plugin/matchit.vim', &rtp) ==# ''
+  runtime! macros/matchit.vim
+endif
+
+inoremap <C-U> <C-G>u<C-U>
+
+"
+" Some more personnal additions
+"
+set nocompatible " Prevent vim from emulating vi
+set autoindent " Auto indenting
+set number " line numbers
+set wildmode=list:longest " Make wildmenu behave like bash completion. 
+set showmatch " Show matching braces when typed or under cursor
+set showmode " Show current mode (insert, visual, etc.)
+set ignorecase " Searching, ignore case
+set smartcase " Searching, case sensitive only when capital letter in expression
+set hlsearch " highlight matching text while typing
+set hidden " Allow buffer to be changed without writing to disk
+set splitright " More natural split, vertical on right
+set splitbelow " and horizontal below
+set report=1
+set visualbell           " don't beep
+set noerrorbells         " don't beep
+" In many terminal emulators the mouse works just fine, thus enable it.
+if has('mouse')
+  set mouse=a
+  set mousemodel=popup
+endif
+" Classic indentation, python friendly
+set shiftwidth=4 tabstop=4 softtabstop=4
+set expandtab
+" When indenting in visualmode, we prevent to go back in normal mode.
+vnoremap < <gv
+vnoremap > >gv
+" resize splits when the window is resized
+" change ; to : if you get an error
+au VimResized * ;wincmd =
