@@ -1,0 +1,105 @@
+if has("gui_running")
+	set guifont=Bitstream\ Vera\ Sans\ Mono\ 10
+	highlight Normal guifg=white guibg=black
+	set langmenu=none
+	let $LANG='en'
+else
+	set t_Co=16 t_md=
+endif
+
+if has('win32') || has('win64')
+	set directory=%TEMP%
+	set backupdir=%TEMP%
+endif
+
+set number
+set wrap
+
+set sts=0
+set noexpandtab
+set ts=8
+set shiftwidth=8
+
+set ruler
+set winminheight=0
+set noequalalways
+set nocompatible
+set backspace=2
+set autoindent
+set textwidth=0
+set nobackup
+set showmatch
+set history=50
+set scrolloff=5
+set suffixes=.bak,~,.swp,.o,.info,.aux,.log,.dvi,.bbl,.blg,.brf,.cb,.ind,.idx,.ilg,.inx,.out,.toc
+set background=dark
+set ww=<,>,[,]
+syntax on
+set nohlsearch
+
+set wildmenu
+set lazyredraw
+
+let html_use_css = 1
+"
+" turned off folding, it caused VIM to become super slow when editing big
+" files. https://github.com/vim-perl/vim-perl/issues/170
+"     /tanoh 2018-10-09
+"
+" folding
+"set foldlevelstart=20
+"set foldlevel=2
+"let perl_fold=1
+"set foldenable
+"set foldmethod=syntax
+"nnoremap <space> za
+
+function! PerlCritic()
+	execute '!perl_checker.pl' '--'.s:perl_critic_level expand('%:p')
+	cf
+endfunction
+
+" Perl -c/critic checker mapping.
+let s:perl_critic_level = "harsh"
+noremap ,c :call PerlCritic()<cr>
+noremap cn :cnext<cr>
+
+" Xml formating
+let s:xmllint_indent="\t"
+command! Xmlformat execute '%!XMLLINT_INDENT="'.s:xmllint_indent.'" xmllint' '--format' '-'
+noremap <F8> :Xmlformat<CR>
+
+" JSON formating
+function! s:JsonFormatFunc()
+	let s:json_format_arg = ""
+	if executable('jq')
+		let s:json_format_cmd = "jq"
+		let s:json_format_arg = "--tab --sort-keys '.'"
+	else
+		let s:json_format_cmd = "json_xs"
+	endif
+	execute '%!'.s:json_format_cmd s:json_format_arg '-'
+endfunction
+
+command! JsonFormat call s:JsonFormatFunc()
+noremap <F7> :JsonFormat<CR>
+
+" Map for home/end
+map <Esc>[7~ <Home>
+map! <Esc>[7~ <Home>
+
+map <Esc>[8~ <End>
+map! <Esc>[8~ <End>
+
+" mailsettings
+":au FileType mail syn clear
+au FileType mail se tw=78 noai
+
+au BufEnter /tmp/mutt-*         :set textwidth=78 noai filetype=mail
+
+au BufNewFile,BufRead *.cmd	:set filetype=c
+
+au BufNewFile,BufRead *.md	:set filetype=markdown
+
+au BufReadPost *.html.ep	:set syntax=html.epl
+
