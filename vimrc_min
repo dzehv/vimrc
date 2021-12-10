@@ -112,3 +112,7 @@ vnoremap > >gv
 " resize splits when the window is resized
 " change ; to : if you get an error
 au VimResized * ;wincmd =
+
+set encoding=utf-8
+" set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8
+set fileformats=unix,dos,mac
